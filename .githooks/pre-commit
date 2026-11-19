@@ -1,0 +1,49 @@
+#!/bin/sh
+# pre-commit: ostatnia bariera przed historią gita (działa dla ludzi i agenta).
+# Nie omijaj przez --no-verify — hook Claude Code to blokuje, a CI i tak to sprawdzi.
+set -eu
+
+fail() { printf '\n\033[31m✖ pre-commit: %s\033[0m\n%s\n\n' "$1" "${2:-}" >&2; exit 1; }
+
+# 1. Zakaz commitów na gałęzi głównej (pierwszy commit w pustym repo jest dozwolony —
+#    na nienarodzonej gałęzi rev-parse zwraca "HEAD", więc warunek go nie łapie).
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+case "$branch" in
+  main|master) fail "commit bezpośrednio na '$branch'" "Utwórz gałąź: git switch -c <typ>/<T-xxx>-<opis>" ;;
+esac
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+# 2. Zakazane pliki w stage
+echo "$staged" | while IFS= read -r f; do
+  case "$f" in
+    .env.example|*/.env.example) ;;
+    .env|.env.*|*/.env|*/.env.*|*.pem|*.key|*.p12|.npmrc|*/id_rsa*|*/id_ed25519*)
+      fail "plik z sekretami w stage: $f" "Usuń go ze stage: git restore --staged '$f' (i dodaj do .gitignore)" ;;
+  esac
+done
+
+# 3. Sekrety w dodanych liniach
+if command -v gitleaks >/dev/null 2>&1; then
+  if gitleaks git --help >/dev/null 2>&1; then
+    gitleaks git --pre-commit --staged --redact --no-banner --config .gitleaks.toml \
+      || fail "gitleaks wykrył sekret w zmianach" "Usuń sekret, użyj zmiennej środowiskowej. W fixture'ach tylko wartości z markerem FAKE/EXAMPLE."
+  else
+    gitleaks protect --staged --redact --no-banner --config .gitleaks.toml \
+      || fail "gitleaks wykrył sekret w zmianach" "Usuń sekret, użyj zmiennej środowiskowej."
+  fi
+else
+  # Minimalny fallback bez gitleaks (zainstaluj gitleaks dla pełnej ochrony)
+  added=$(git diff --cached -U0 --diff-filter=ACMR -- . ':(exclude)tests/fixtures/**' | grep '^+' | grep -v '^+++' || true)
+  if printf '%s' "$added" | grep -Eq '(AKIA|ASIA)[0-9A-Z]{16}|sk-ant-[A-Za-z0-9_-]{20,}|sk-(proj-)?[A-Za-z0-9_-]{32,}|(sk|rk)_live_[0-9a-zA-Z]{20,}|gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{60,}|xox[abprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|(postgres(ql)?|mysql|mongodb(\+srv)?|redis)://[^[:space:]:/@]+:[^[:space:]@/]{3,}@'; then
+    fail "wykryto wzorzec sekretu w dodanych liniach" "Usuń sekret, użyj zmiennej środowiskowej. (Zainstaluj gitleaks dla dokładniejszego skanu.)"
+  fi
+fi
+
+# 4. Szybka weryfikacja (gdy projekt ma już skrypty — po T-001)
+if [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.['verify:fast']?0:1)" 2>/dev/null; then
+  npm run --silent verify:fast || fail "npm run verify:fast nie przechodzi" "Napraw błędy powyżej. Nie wyciszaj ich i nie pomijaj testów."
+fi
+
+exit 0

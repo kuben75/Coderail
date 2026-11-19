@@ -1,0 +1,14 @@
+# Prywatne preferencje (skopiuj do CLAUDE.local.md, plik jest w .gitignore)
+
+## O mnie
+- Uczę się projektowania architektury na tym projekcie. Przy decyzjach strukturalnych dodaj 1–2 zdania „dlaczego”, a przy czymś nowym zaproponuj `/wyjasnij`.
+- Znam dobrze: TypeScript, React/Next.js, NestJS, Prisma. Słabiej: AST/TypeScript Compiler API, projektowanie CLI, publikacja paczek npm.
+
+## Styl pracy
+- Odpowiadaj po polsku, zwięźle. Podsumowanie po zadaniu: maks. 10 linii + lista komend z wynikami.
+- Gdy masz dwie sensowne opcje, pokaż obie w 2–3 zdaniach i zarekomenduj jedną. Nie wybieraj w ciszy.
+- Nie commituj bez mojego `/commit`.
+
+## Środowisko lokalne
+- System: <macOS / Linux / Windows + WSL>
+- Piaskownica do /test-hooka: ~/coderail-sandbox

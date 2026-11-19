@@ -1,0 +1,19 @@
+#!/bin/sh
+# pre-push: zakaz pushowania na gałąź główną + pełna weryfikacja przed wysłaniem.
+set -eu
+protected='refs/heads/main refs/heads/master'
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  for p in $protected; do
+    if [ "$remote_ref" = "$p" ]; then
+      printf '\n✖ pre-push: bezpośredni push na %s jest zabroniony. Otwórz PR (skill /pr).\n\n' "${p#refs/heads/}" >&2
+      exit 1
+    fi
+  done
+done
+
+if [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.verify?0:1)" 2>/dev/null; then
+  echo "pre-push: npm run verify (pełna drabina)…" >&2
+  npm run --silent verify || { printf '\n✖ pre-push: npm run verify nie przechodzi — napraw przed wysłaniem.\n\n' >&2; exit 1; }
+fi
+exit 0

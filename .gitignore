@@ -1,0 +1,29 @@
+# Zależności i build
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.vitest-cache/
+
+# Sekrety (nigdy w repo)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.npmrc
+
+# Claude Code — lokalne i stan sesji
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/state/
+.claude/worktrees/
+
+# System / edytor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+*.cpuprofile

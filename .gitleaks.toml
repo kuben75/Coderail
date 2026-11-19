@@ -1,0 +1,13 @@
+# Konfiguracja gitleaks (CI: job "secrets"; lokalnie: pre-commit, jeśli gitleaks jest zainstalowany).
+# Wymaga gitleaks >= 8.25 (składnia [[allowlists]] z condition).
+title = "coderail"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fałszywe sekrety w fixture'ach testowych reguł — dozwolone TYLKO z markerem FAKE/EXAMPLE"
+condition = "AND"
+paths = ['''^tests/fixtures/''']
+regexTarget = "line"
+regexes = ['''(?i)(FAKE|EXAMPLE)''']

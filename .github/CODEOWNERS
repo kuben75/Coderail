@@ -1,0 +1,7 @@
+# Zmień @OWNER na swój login GitHub. Pliki kontrolujące agenta i bezpieczeństwo wymagają Twojego review.
+*                       @OWNER
+/.claude/               @OWNER
+/.githooks/             @OWNER
+/.github/               @OWNER
+/src/adapters/          @OWNER
+/docs/adr/              @OWNER

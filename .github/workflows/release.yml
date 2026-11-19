@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write        # tag + GitHub Release + PR "Version Packages"
+  pull-requests: write
+  id-token: write        # npm provenance / Trusted Publishing
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # hashFiles() nie działa w `if` na poziomie joba — sprawdzamy gotowość w kroku.
+      - name: Czy projekt jest gotowy do wydań (po T-001)?
+        id: ready
+        run: |
+          if [ -f package.json ] && [ -f .changeset/config.json ]; then echo "ok=true" >> "$GITHUB_OUTPUT";
+          else echo "::notice::Brak package.json lub .changeset/config.json — release pominięty."; fi
+      - uses: actions/setup-node@v4
+        if: steps.ready.outputs.ok == 'true'
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+        if: steps.ready.outputs.ok == 'true'
+      - run: npm run verify
+        if: steps.ready.outputs.ok == 'true'
+        env:
+          CI: 'true'
+      # Gdy są changesety: otwiera/aktualizuje PR "chore: version packages".
+      # Gdy ten PR zostanie zmergowany przez człowieka: publikuje na npm.
+      - uses: changesets/action@v1
+        if: steps.ready.outputs.ok == 'true'
+        with:
+          title: 'chore: version packages'
+          commit: 'chore: version packages'
+          publish: npx changeset publish
+          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}          # usuń po skonfigurowaniu npm Trusted Publishing
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'

@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+# Fixture CRLF musi zachować końce linii (test obsługi CRLF w regułach)
+tests/fixtures/**/crlf-* -text
+*.png binary
+*.gif binary
