@@ -59,7 +59,7 @@ const LAYERS = [
     forbiddenInternal: ['src/cli/', 'src/adapters/'],
     forbiddenExternal: [/^node:/],
     why: 'Presety to dane (konfiguracja), nie logika z efektami ubocznymi.',
-    fix: 'Preset zwraca obiekt konfiguracji. Wykrywanie stacku należy do src/adapters/fs-scanner.ts.' },
+    fix: 'Preset zwraca obiekt konfiguracji. Wykrywanie stacku należy do src/adapters/stack-detector.ts.' },
   { name: 'adapters', glob: 'src/adapters/**',
     forbiddenInternal: ['src/cli/', 'src/rules/'],
     forbiddenExternal: [/^(commander|@clack\/prompts)$/],

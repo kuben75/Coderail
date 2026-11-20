@@ -41,6 +41,11 @@
       "Bash(mkdir -p *)"
     ],
     "ask": [
+      "Bash(git add -A*)",
+      "Bash(git add --all*)",
+      "Bash(git add .)",
+      "Bash(git stash drop*)",
+      "Bash(git stash clear*)",
       "Bash(git commit*)",
       "Bash(git push*)",
       "Bash(git merge*)",
@@ -70,6 +75,8 @@
       "Write(./.env*)",
       "Edit(./.claude/settings.json)",
       "Write(./.claude/settings.json)",
+      "Edit(./.claude/settings.local.json)",
+      "Write(./.claude/settings.local.json)",
       "Edit(./.claude/hooks/**)",
       "Write(./.claude/hooks/**)",
       "Edit(./.githooks/**)",
@@ -102,7 +109,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|PowerShell",
         "hooks": [
           { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-bash-guard.mjs\"", "timeout": 5 }
         ]

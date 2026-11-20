@@ -6,6 +6,8 @@
 import { readHookInput, git, denyPreToolUse, askPreToolUse, formatViolation, failOpen } from './lib/common.mjs';
 
 const PROTECTED_BRANCHES = ['main', 'master'];
+// Reguły dotyczące flag komendy (nie treści). Dla nich ignorujemy tekst w cudzysłowach.
+const UNQUOTED_RULES = new Set(['no-verify']);
 
 /**
  * Reguły: [id, regex, why, fix, decyzja]. Kolejność ma znaczenie — pierwsza pasująca wygrywa.
@@ -81,7 +83,7 @@ const RULES = [
   // --- zależności (dozwolone, ale świadomie) ---
   ['new-dependency', /\b(npm|pnpm|yarn)\s+(i|install|add)\b(?:\s+-\S+)*\s+[@a-z0-9]/,
     'Nowa zależność zwiększa czas startu CLI i powierzchnię ataku (supply chain).',
-    'Sprawdź .claude/rules/dependencies.md. Uzasadnij potrzebę człowiekowi; preferuj wbudowane moduły Node.', 'ask'],
+    'Sprawdź .claude/rules/zaleznosci.md. Uzasadnij potrzebę człowiekowi; preferuj wbudowane moduły Node.', 'ask'],
 ];
 
 try {
@@ -89,8 +91,12 @@ try {
   const command = String(input?.tool_input?.command ?? '');
   if (!command) process.exit(0);
 
+  // Reguły o flagach sprawdzamy bez treści w cudzysłowach, żeby `git commit -m "obsłuż flagę -n"` nie był fałszywym alarmem.
+  // Regex bez zagnieżdżonych kwantyfikatorów (ReDoS).
+  const unquoted = command.replace(/"[^"]*"|'[^']*'/g, '""');
+
   for (const [id, regex, why, fix, decision] of RULES) {
-    if (regex.test(command)) {
+    if (regex.test(UNQUOTED_RULES.has(id) ? unquoted : command)) {
       const msg = formatViolation({ id: `bash/${id}`, why, fix });
       if (decision === 'ask') askPreToolUse(msg);
       denyPreToolUse(msg);

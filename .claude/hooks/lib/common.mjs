@@ -91,6 +91,13 @@ export function git(args, opts = {}) {
   }
 }
 
+/** Bieżąca gałąź. Szybka ścieżka: odczyt .git/HEAD bez uruchamiania gita; w worktree/detached HEAD fallback na git. */
+export function currentBranch() {
+  const head = readTextSafe(path.join(PROJECT_DIR, '.git', 'HEAD'));
+  const m = head ? /^ref: refs\/heads\/(\S+)/.exec(head.trim()) : null;
+  return m ? m[1] : git(['rev-parse', '--abbrev-ref', 'HEAD']);
+}
+
 export function readJsonSafe(file) {
   try {
     return JSON.parse(readFileSync(file, 'utf8'));

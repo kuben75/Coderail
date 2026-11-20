@@ -3,14 +3,19 @@
 //  1. Pliki z sekretami (.env, klucze) — zakaz.
 //  2. Pliki chronione (konfiguracja agenta, hooki, CI, lockfile, zaakceptowane ADR) — zakaz lub pytanie.
 //  3. Sekrety w treści zapisu (poza tests/fixtures/**, gdzie żyją CELOWO fałszywe sekrety).
-//  4. Scope guard — zapis poza zakresem aktualnego zadania (.claude/state/task.json).
+//  4. Brak aktywnego zadania albo gałąź główna — zakaz zapisu (poza .claude/state/**).
+//  5. Scope guard — zapis poza zakresem aktualnego zadania (.claude/state/task.json).
 // Uprawnienia w .claude/settings.json dublują część reguł (obrona warstwowa).
 
 import path from 'node:path';
 import {
-  readHookInput, toRelative, matchesAny, readTextSafe, readCurrentTask,
+  readHookInput, toRelative, matchesAny, readTextSafe, readCurrentTask, currentBranch,
   denyPreToolUse, askPreToolUse, formatViolation, failOpen, PROJECT_DIR,
 } from './lib/common.mjs';
+
+const PROTECTED_BRANCHES = ['main', 'master'];
+// Stan sesji (task.json, plan.md, followups.md, handoff.md) agent zapisuje zawsze.
+const STATE_GLOBS = ['.claude/state/**'];
 
 // --- 1. Pliki, których agent nigdy nie zapisuje ---
 const FORBIDDEN = [
@@ -24,9 +29,12 @@ const FORBIDDEN = [
 
 // --- 2. Pliki chronione ---
 const PROTECTED = [
-  { globs: ['.claude/settings.json', '.claude/hooks/**', '.githooks/**'], decision: 'deny',
+  { globs: ['.claude/settings.json', '.claude/settings.local.json', '.claude/hooks/**', '.githooks/**'], decision: 'deny',
     why: 'To mechanizmy kontrolujące agenta. Agent, który może je zmieniać, może wyłączyć własne bariery.',
     fix: 'Nie zmieniaj ich. Jeśli hook daje fałszywy alarm albo blokuje słuszną zmianę, opisz to człowiekowi (plik, komunikat, dlaczego to błąd).' },
+  { globs: ['CLAUDE.md', '.claude/rules/**', '.claude/skills/**', '.claude/agents/**'], decision: 'ask',
+    why: 'To instrukcje sterujące agentem. Agent, który sam je zmienia, może po cichu poluzować własne zasady.',
+    fix: 'Uzasadnij zmianę w jednym zdaniu. Człowiek zatwierdzi ją ręcznie.' },
   { globs: ['package-lock.json', '**/package-lock.json'], decision: 'deny',
     why: 'Lockfile edytowany ręcznie rozjeżdża się z rzeczywistym drzewem zależności.',
     fix: 'Zmieniaj zależności tylko komendami npm (install/uninstall/update) — lockfile zaktualizuje się sam.' },
@@ -50,9 +58,17 @@ const SECRET_PATTERNS = [
   ['Klucz prywatny', /-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----/],
   ['URL bazy z hasłem', /\b(postgres(ql)?|mysql|mongodb(\+srv)?|redis|amqp):\/\/[^\s:/@]+:[^\s@/]{3,}@/],
 ];
-// Fałszywe sekrety są dozwolone TYLKO w fixture'ach i muszą zawierać marker (patrz .claude/rules/testing.md).
+// Fałszywe sekrety są dozwolone TYLKO w fixture'ach i muszą mieć marker w tej samej linii (patrz .claude/rules/testy.md).
+// Bez "TEST": słowa test/latest/contest są w fixture'ach wszędzie i przepuszczałyby prawdziwe sekrety.
 const SECRET_ALLOWED_GLOBS = ['tests/fixtures/**'];
-const FAKE_MARKER = /FAKE|EXAMPLE|DUMMY|TEST|XXXX/i;
+const FAKE_MARKER = /FAKE|EXAMPLE|DUMMY|XXXX/i;
+
+/** Linia treści, w której leży dopasowanie (marker musi być w tej samej linii co sekret). */
+function lineAround(text, index, length) {
+  const start = text.lastIndexOf('\n', index) + 1;
+  const end = text.indexOf('\n', index + length);
+  return text.slice(start, end === -1 ? undefined : end);
+}
 
 function newContentOf(input) {
   const ti = input.tool_input ?? {};
@@ -112,7 +128,7 @@ try {
     for (const [name, re] of SECRET_PATTERNS) {
       const m = content.match(re);
       if (!m) continue;
-      if (inFixtures && FAKE_MARKER.test(m[0] + content.slice(Math.max(0, m.index - 80), m.index + m[0].length + 80))) continue;
+      if (inFixtures && FAKE_MARKER.test(lineAround(content, m.index, m[0].length))) continue;
       denyPreToolUse(formatViolation({
         id: 'edit/secret-in-content', file: rel,
         why: `Zapisywana treść wygląda na sekret (${name}). Sekret w repo = wyciek, nawet po późniejszym usunięciu (zostaje w historii gita).`,
@@ -144,6 +160,25 @@ try {
       }));
     }
     process.exit(0);
+  }
+
+  // Bez aktywnego zadania i na gałęzi głównej nie ma zmian w repo (CLAUDE.md: „Bez aktywnego zadania nie ma zmian w kodzie”, „Nigdy praca na main”).
+  if (!matchesAny(rel, STATE_GLOBS)) {
+    if (!task) {
+      denyPreToolUse(formatViolation({
+        id: 'edit/no-active-task', file: rel,
+        why: 'Brak aktywnego zadania (.claude/state/task.json albo status "done"). Bez zadania nie ma gałęzi, zakresu ani kryteriów akceptacji.',
+        fix: 'Uruchom /start-zadania (gałąź, zakres, plan), a dopiero potem wprowadzaj zmiany. Jeśli człowiek prosi o drobną poprawkę poza zadaniem, powiedz mu, że wymaga to zadania.',
+      }));
+    }
+    const branch = currentBranch();
+    if (PROTECTED_BRANCHES.includes(branch)) {
+      denyPreToolUse(formatViolation({
+        id: 'edit/on-protected-branch', file: rel,
+        why: `Jesteś na gałęzi "${branch}". Zmiany powstają na gałęzi zadania i trafiają na main przez PR.`,
+        fix: `Przełącz się na gałąź zadania${task.branch ? ` (\`git switch ${task.branch}\`)` : ''} albo utwórz ją przez /start-zadania.`,
+      }));
+    }
   }
 
   // Scope guard — tylko gdy zadanie jest aktywne

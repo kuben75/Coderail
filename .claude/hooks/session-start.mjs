@@ -37,7 +37,7 @@ try {
   }
 
   if (source === 'compact' || source === 'resume') {
-    lines.push('', '## Przypomnienie twardych zasad (po kompaktowaniu kontekstu)');
+    lines.push('', `## Przypomnienie twardych zasad (po ${source === 'compact' ? 'kompaktowaniu kontekstu' : 'wznowieniu sesji'})`);
     lines.push('- Test najpierw: każda zmiana zachowania reguły zaczyna się od fixture\'a, który teraz nie przechodzi.');
     lines.push('- Zależności tylko do środka: cli → adapters → core ← rules. core i rules bez fs/child_process/console.');
     lines.push('- Nie osłabiaj testów, nie dodawaj @ts-ignore/any/.skip. Hooki to wyłapią — nie obchodź ich.');
