@@ -38,7 +38,7 @@ jobs:
           CI: 'true'
       # Gdy są changesety: otwiera/aktualizuje PR "chore: version packages".
       # Gdy ten PR zostanie zmergowany przez człowieka: publikuje na npm.
-      - uses: changesets/action@v1
+      - uses: changesets/action@v2
         if: steps.ready.outputs.ok == 'true'
         with:
           title: 'chore: version packages'
