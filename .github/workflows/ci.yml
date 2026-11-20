@@ -25,7 +25,7 @@ jobs:
       - name: Brak package.json (przed T-001) — pomijam
         if: hashFiles('package.json') == ''
         run: echo "::notice::package.json nie istnieje — CI pominięte do czasu bootstrapu (T-001)."
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: hashFiles('package.json') != ''
         with:
           node-version: ${{ matrix.node }}
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: hashFiles('package-lock.json') != ''
         with:
           node-version: 22
@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: hashFiles('scripts/bench-hook.mjs') != ''
         with:
           node-version: 22
