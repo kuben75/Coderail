@@ -40,8 +40,8 @@ GitHub: review + squash merge
 | agent złamał zasadę, hook słusznie zablokował | nic, agent poprawi się sam (to jest pętla samonaprawcza) |
 | agent zgłasza, że blokada jest błędna | oceń. Jeśli ma rację: popraw hook **sam** (agent nie może edytować `.claude/hooks/`), dodaj przypadek testowy do `.claude/hooks/README.md` |
 | agent próbuje obejść hook (Bash zamiast Edit, rozbicie zapisu, zmiana ścieżki) | przerwij (Esc), powiedz wprost „nie obchodź hooka, opisz problem”. Zanotuj wzorzec: to materiał na regułę produktu |
-| scope guard blokuje potrzebny plik | zatwierdź zmianę zakresu w `task.json` (hook zapyta) albo powiedz agentowi, żeby zapisał to jako follow-up |
-| Stop hook zapętla się na czerwonym teście | po drugiej blokadzie hook przepuszcza (`stop_hook_active`). Agent musi wtedy napisać, czego nie umie naprawić. Zdecyduj ty |
+| scope guard blokuje potrzebny plik | agent proponuje edycję zakresu w `task.json`, a hook pyta Ciebie o zgodę (pokazuje stary i nowy zakres). Możesz też kazać agentowi zapisać to jako follow-up |
+| Stop hook zapętla się na czerwonym teście | hook blokuje zakończenie raz. Przy kolejnej próbie w tym samym ciągu (`stop_hook_active`) przepuszcza, nawet jeśli testy dalej są czerwone. Agent musi wtedy napisać, czego nie umie naprawić. Zdecyduj ty |
 
 ## Definition of Done (sprawdza hook Stop + `/weryfikacja`)
 - [ ] kryteria akceptacji z `task.json` mają dowody (test/komenda/plik)

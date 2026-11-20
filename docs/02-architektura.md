@@ -49,7 +49,8 @@ src/
 │   ├── diff.ts                 # zakresy zmienionych linii, ignore-directives
 │   ├── ports.ts                # interfejsy: FileReader, GitClient, Clock…
 │   ├── errors.ts               # CodeRailError + kody
-│   ├── messages.ts             # składanie komunikatu (dane), redakcja
+│   ├── messages.ts             # składanie komunikatu (dane)
+│   ├── redact.ts               # redakcja sekretów w evidence i komunikatach
 │   └── ast/                    # fasada parsera (lazy), helpery: importy, wywołania, obiekty
 ├── rules/
 │   ├── index.ts                # rejestr reguł
@@ -102,7 +103,7 @@ Claude Code ──stdin JSON──► cli/commands/hook.ts
 | wstrzyknięcie komend przez ścieżkę | tylko `execFile('git', [..., '--', path])`, brak powłoki |
 | path traversal (`../../`) | normalizacja + wymóg „wewnątrz projektu”, ignorowanie symlinków na zewnątrz |
 | ReDoS (wzorce wbudowane i z configu) | brak zagnieżdżonych kwantyfikatorów, limit długości wzorca/wejścia, testy czasu |
-| wyciek sekretu przez komunikat (stderr trafia do modelu i logów) | redakcja w `core/messages.ts`, testy, że pełna wartość nie pojawia się w żadnym wyjściu |
+| wyciek sekretu przez komunikat (stderr trafia do modelu i logów) | redakcja w `core/redact.ts` (wywoływana przez reguły i `core/messages.ts`), testy, że pełna wartość nie pojawia się w żadnym wyjściu |
 | obejście blokady celowym crashem | crash reguły izolowany przez silnik; pozostałe reguły nadal blokują; fail-open tylko dla crashu całego procesu |
 | obejście przez inne narzędzie (Bash `>`/`sed -i`) | `post-tool-use` + `stop` + `pre-commit` sprawdzają stan plików niezależnie od narzędzia; reguła `no-ai-cheats` patrzy na diff |
 | wykonanie kodu z repo | wykonujemy wyłącznie jawny plik configu |

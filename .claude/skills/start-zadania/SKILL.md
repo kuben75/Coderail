@@ -2,7 +2,6 @@
 name: start-zadania
 description: Rozpoczyna nowe zadanie — tworzy gałąź, ustala zakres (scope guard), kryteria akceptacji i plan w .claude/state/. Użyj zawsze przed pierwszą zmianą w kodzie w nowym zadaniu.
 argument-hint: "[T-xxx z roadmapy | krótki opis zadania]"
-disable-model-invocation: true
 allowed-tools: Bash(git status*) Bash(git switch *) Bash(git branch*) Bash(git log*) Bash(mkdir -p *) Read Grep Glob
 ---
 

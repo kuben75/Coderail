@@ -23,7 +23,7 @@ Przed T-001 (bootstrap) skrypty nie istnieją. Wtedy zgłoś to, nie udawaj, że
 ## Architektura w jednym zdaniu
 `cli → adapters → core ← rules`, `presets` = dane. Core i reguły są czyste (bez I/O, console, process). Świat zewnętrzny wchodzi przez porty w `src/core/ports.ts`, a składa go `src/cli/composition.ts`. Szczegóły: `docs/02-architektura.md`.
 
-## Twarde zasady (egzekwowane hookami, nie obchodź ich)
+## Twarde zasady (obowiązują zawsze, także tam, gdzie żaden hook ich nie sprawdza; nie obchodź hooków)
 - Test najpierw: zmiana zachowania zaczyna się od czerwonego testu lub fixture'a.
 - Zakaz: `any`, `@ts-ignore`, `eslint-disable`, `.only/.skip`, osłabianie lub usuwanie asercji, `console`/`process.exit` poza CLI.
 - Tylko pliki z zakresu zadania. Pomysły „przy okazji” zapisuj w `.claude/state/followups.md`.

@@ -48,7 +48,7 @@ scripts/      (puste, .gitkeep)
 Pliki w `src/` mogą zawierać tylko minimalny, poprawny kod potrzebny, żeby narzędzia przeszły (`knip` nie może zgłaszać nieużywanych eksportów: eksportuj je przez `src/index.ts`).
 
 ## 4. Git hooki
-`npm run prepare` ustawia `core.hooksPath` na `.githooks` (pliki już istnieją w repo, nie edytuj ich). Sprawdź: `git config core.hooksPath` → `.githooks`.
+`npm run prepare` ustawia `core.hooksPath` na `.githooks` (pliki już istnieją w repo, nie edytuj ich). Sprawdź: `git rev-parse --git-path hooks` → `.githooks`. (Nie używaj `git config core.hooksPath`: `pre-bash-guard` blokuje każde polecenie `git config` dotykające `core.hooksPath`, także sam odczyt).
 
 ## 5. Weryfikacja końcowa
 Każda komenda musi przejść:
